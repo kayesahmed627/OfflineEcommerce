@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline E-Commerce</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles/style.css" />
+    <script src="scripts/jquery-3.7.1.js"></script>
+    <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.css" />
+
+    <script>
+        $(() => {
+            let db;
+            const request = indexedDB.open("mobiledb");
+            request.onerror = (event) => {
+                console.error("Why didn't you allow my web app to use indexedDB?!");
+            };
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                populate(db);
+                console.log(db);
+            };
+            ////////////
+
+            $(document).on("click", "button.btn-cart", function () {
+          var cart = [];
+          var cartdata = localStorage.getItem("cart-data");
+          if (cartdata) {
+            cart = JSON.parse(cartdata);
+          }
+          let item = cart.find(x=> x.id == $(this).data('id'));
+          if(item){
+            item.qty += 1;
+          }
+          else
+          {
+            item = {id: $(this).data('id'), name: $(this).data('name'), price: $(this).data('price'), qty:1}
+            cart.push(item);
+          }
+          console.log(item);
+          localStorage.setItem("cart-data", JSON.stringify(cart));
+          $('#count').html(countCart().toString());
+        });
+
+            ////////////
+
+            let data = sessionStorage.getItem("login-data");
+            let isLoggedIn = false;
+            if (data) {
+                data = JSON.parse(data);
+                isLoggedIn = true;
+            }
+            if (isLoggedIn) {
+                $("#admin").show();
+                $("#cart").show();
+                $("#login").hide();
+                $('#count').html(countCart().toString());
+                } else {
+                $("#admin").hide();
+                $("#cart").hide();
+                $("#login").show();
+            }
+        });
+
+        function populate(db) {
+        const trx = db.transaction(["products"], "readonly");
+        const store = trx.objectStore("products");
+        const cursor = (store.openCursor()
+        .onsuccess = (event) => {
+          const pointer = event.target.result;
+          if (pointer) {
+            console.log(pointer.value.name);
+            console.log(pointer.value.price);
+            console.log(pointer.value.description);
+            $("#products").append(`<div class="box">
+                            <img src="${pointer.value.picture}" />
+                            <div class="name">${pointer.value.name}</div>
+                            <div style="text-align: right;">Price: <span class="price">${pointer.value.price}</span></div>
+                            <div class="desc">${pointer.value.description}</div>
+                            <div class="add"><button data-id="${pointer.value.id}" data-price="${pointer.value.price}" 
+                            data-name="${pointer.value.name}" class="btn-cart"><i class="fa fa-shopping-cart"></i> Add to cart</button></div>
+                            </div>`);
+            pointer.continue();
+          }
+        });
+      }
+
+      function countCart(){
+        var cart = [];
+        var cartdata = localStorage.getItem('cart-data');
+        if(cartdata){
+          cart = JSON.parse(cartdata)
+        }
+        let c=0;
+        cart.forEach(x => {
+          c += Number(x.qty);
+        });
+        return c;
+      }
+    </script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <span class="brand">Mobile <i class="fa-solid fa-phone-flip"></i><sup class="device">Device</sup></span>
+        <ul class="nav">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="products.html">Devices</a></li>
+            <li><a href="admin.html" id='admin'>Admin</a></li>
+            <li><a href="cart.html" id="cart"><i class="fa fa-shopping-cart"></i> <span id="count">0</span> items</a></li>
+            <li><a href="login.html" id='login'>Login</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+      <h1>Welcome to shop<sup>24/7</sup></h1>
+      <div class="products" id="products"></div>
+    </main>
+    
+</body>
+</html>

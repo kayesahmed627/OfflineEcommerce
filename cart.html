@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline E-Commerce</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles/style.css" />
+    <script src="scripts/jquery-3.7.1.js"></script>
+    <script src="data.js"></script>
+    <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.css">
+<script>
+    var cart =[];
+      $(() => {
+        var cartdata = localStorage.getItem("cart-data");
+          if (cartdata) {
+            cart = JSON.parse(cartdata);
+          }
+          showCart();         
+          $(document).on('input', '.qty', function(){
+            let q= $(this).val();
+            let p =$(this).parent().prev().text();
+            $(this).parent().next().text(Number(q)*Number(p));
+            console.log($('.amount'));
+            let amt =0;
+            $('.amount').each((i, el)=>{
+                amt += Number($(el).text());
+            });
+            $('#sum').text('Total: '+ amt)
+          });
+          $(document).on('click', '.save', function(){
+            let id= $(this).data('pk');
+            let q = $(this).parent().prev().prev().find('input').val();
+            console.log(id);
+            let item= cart.find(x=> x.id == id);
+            item.qty = q;
+            localStorage.setItem("cart-data", JSON.stringify(cart));
+          });
+          $(document).on('click', '#checkout', function(){
+            cart =[];
+            localStorage.setItem("cart-data", JSON.stringify(cart));
+            window.location.href='index.html';
+          });
+      });
+      function showCart(){
+        let total = 0;
+        $('#cartbody').empty();
+        cart.forEach(c=>{
+            total += Number(c.price)*Number(c.qty);
+            $('#cartbody').append(`<tr>
+                    <td>${c.name}</td>
+                    <td>${c.price}</td>
+                    <td><input min="1" type="number" value="${c.qty}" style="width:50px" class="qty" /></td>
+                    <td class='amount'>${Number(c.price)*Number(c.qty)}</td>
+                    <td>
+                            <button type="button" class="btn-del" data-pk="${c.id}">Delete</button>
+                            <button type="button" class="btn save" data-pk="${c.id}">Save</button>
+                    </td>
+                </tr>`);
+          });
+          $('#cartbody').append(`<tr>
+                <td colspan="4" style="text-align:right;" id="sum">Total: ${total}</td>
+                <td>
+                    <button type="button" class="btn-del" id="checkout">Checkout</button>
+                </td>
+            </tr>`)
+      }
+</script>
+</head>
+<body>
+    <nav class="navbar">
+        <span class="brand">Mobile <i class="fa-solid fa-phone-flip"></i><sup class="device">Device</sup></span>
+        <ul class="nav">
+            <li><a href="index.html">Home</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h3>Your cart</h3>
+           <table class="table mt">
+               <thead>
+                   <tr>
+                       <th>Item</th>
+                       <th>Price</th>
+                       <th>Quantity</th>
+                       <th>Amount</th>
+                       <th>Action</th>
+                   </tr>
+               </thead>
+               <tbody id="cartbody">
+               </tbody>
+           </table>        
+       </main>
+   
+</body>
+</html>

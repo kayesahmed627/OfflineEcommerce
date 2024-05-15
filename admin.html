@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline E-Commerce</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles/style.css" />
+    <script src="scripts/jquery-3.7.1.js"></script>
+    <script src="scripts/jquery.validate.js"></script>
+
+    <script>
+        $(() => {
+            $("#frm-product").validate();
+            let db;
+            const request = indexedDB.open("mobiledb");
+            request.onerror = (event) => {
+                console.error("Why didn't you allow my web app to use indexedDB?!");
+            };
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                populate(db);
+                console.log(db);
+            };
+            //////
+            
+        $("#save-btn").click(() => {
+        if ($("#frm-product").valid()) {
+            var data = {
+                name: $("#name").val(),
+                price: Number($("#price").val()),
+                description: $("#description").val(),
+            };
+            var f = document.getElementById("picture").files[0];
+            var reader = new FileReader();
+            reader.onload = () => {
+                data.picture = reader.result;
+                Add(db, data);
+                $("#frm-product").trigger("reset");
+            };
+            reader.readAsDataURL(f);
+        }
+        });
+
+
+
+        $("#reset-btn").click(() => {
+            action = "add";
+            $("#frm-product").trigger("reset");
+        });
+        $(document).on("click", ".del", function () {
+          var id = $(this).data("pk");
+          const transaction = db.transaction(["products"], "readwrite");
+          const objectStore = transaction.objectStore("products");
+          const query =objectStore.delete(Number(id));
+          query.onsuccess = ()=>{
+          readData(db);
+          }
+        });
+            /////////////////////
+
+            let data = sessionStorage.getItem("login-data");
+            let isLoggedIn = false;
+            if (data) {
+                data = JSON.parse(data);
+                isLoggedIn = true;
+            }
+            if (isLoggedIn) {
+                $("#admin").show();
+                $("#login").hide();
+            } else {
+                $("#admin").hide();
+                $("#login").show();
+            }
+        });
+
+        ///////
+
+        function readData(db) {
+        $("#tbody").empty();
+        const trx = db.transaction(["products"], "readonly");
+        const store = trx.objectStore("products");
+        const cursor = (store.openCursor().onsuccess = (event) => {
+        const pointer = event.target.result;
+          if (pointer) {
+            $("#tbody").append(`<tr>
+                            <td><img src="${pointer.value.picture}" class="circle-image" /></td>
+                            <td>${pointer.value.name}</td>
+                            <td>${pointer.value.price}</td>
+                            <td>${pointer.value.description}</td>
+                            <td>                          
+                                <button class="btn-del del" data-pk="${pointer.value.id}">Delete</button>
+                            </td>
+                        </tr>`);
+            pointer.continue();
+          }
+        });
+      }
+
+
+        function Add(db, data) {
+        console.log(data);
+        const transaction = db.transaction(["products"], "readwrite");
+        const objectStore = transaction.objectStore("products");
+        const query = objectStore.add(data);
+        query.onsuccess = () => {
+          console.log("done");
+          readData(db);
+        };
+      }
+    </script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <span class="brand">Mobile <i class="fa-solid fa-phone-flip"></i><sup class="device">Device</sup></span>
+        <ul class="nav">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="products.html">Devices</a></li>
+            <li><a href="admin.html" id='admin'>Admin</a></li>
+            <li><a href="login.html" id='login'>Login</a></li>
+        </ul>
+    </nav>
+
+
+    <main class="container">
+        <div class="c1-1">
+          <div>
+            <h3>Products</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>description</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div>
+            <h3>Product</h3>
+            <form id="frm-product">
+              <div class="c1">
+                <input placeholder="name..." id="name" class="input" required />
+              </div>
+              <div class="c1">
+                <input
+                  type="number"
+                  placeholder="price..."
+                  id="price"
+                  class="input"
+                  required
+                />
+              </div>
+              <div class="c1">
+                <input
+                  placeholder="description..."
+                  id="description"
+                  class="input"
+                  required
+                />
+              </div>
+              <div class="c1">
+                <input
+                  type="file"
+                  placeholder="description..."
+                  id="picture"
+                  class="input"
+                  required
+                />
+              </div>
+              <div class="c1" style="text-align: right">
+                <button
+                  type="reset"
+                  class="btn-primary"
+                  type="button"
+                  id="reset-btn"
+                >
+                  Reset
+                </button>
+                <button class="btn-primary" type="button" id="save-btn">
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+  </body>
+</html>

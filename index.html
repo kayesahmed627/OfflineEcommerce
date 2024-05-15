@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline E-Commerce</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="styles/style.css" />
+    <script src="scripts/jquery-3.7.1.js"></script>
+    <script src="data.js"></script>
+    <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.css">
+
+
+    <script>
+        $(() => {
+            let db;
+            const request = indexedDB.open("mobiledb");
+            request.onerror = (event) => {
+            console.error("you aren't allow my web app to use indexedDB?!");
+            };
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                populate(db);
+                console.log(db);
+            };
+            request.onupgradeneeded = (event) => {
+                console.log("upgrade");
+                db = event.target.result;
+                if (!db.objectStoreNames.contains("products")) {
+                    db.createObjectStore("products", {
+                        keyPath: "id",
+                        autoIncrement: true,
+                    });
+                }
+            };
+
+
+
+            let data = sessionStorage.getItem("login-data");
+            let isLoggedIn = false;
+            if (data) {
+                data = JSON.parse(data);
+                isLoggedIn = true;
+            }
+            if (isLoggedIn) {
+                $("#admin").show();
+                $("#cart").show();
+                $("#login").hide();
+                $('#count').html(countCart().toString());
+            } else {
+                $("#admin").hide();
+                $("#cart").hide();
+                $("#login").show();
+             }
+        });
+
+
+
+        function populate(db) {
+            console.log(db);
+            let recordCount = 0;
+            const trx = db.transaction(["products"], "readonly");
+            trx.oncomplete = (event) => {
+                console.log(recordCount);
+                if (recordCount < 1) {
+                    Add(db);
+                }
+                console.log("count done");
+            };
+            const store = trx.objectStore("products");
+            count = store.count();
+            count.onsuccess = function () {
+                recordCount = count.result;
+            };
+        }
+
+
+        function Add(db) {
+                const transaction = db.transaction(["products"], "readwrite");
+                const objectStore = transaction.objectStore("products");
+                for (var i = 0; i < urlData.length; i++) {
+                    const query = objectStore.add(urlData[i]);
+                    query.onsuccess = () => {
+                        console.log('done');
+                    };
+                }
+           }
+        function countCart(){
+        var cart = [];
+        var cartdata = localStorage.getItem('cart-data');
+        if(cartdata){
+          cart = JSON.parse(cartdata)
+        }
+        let c=0;
+        cart.forEach(x => {
+          c += Number(x.qty);
+        });
+        return c;
+      }
+    </script>
+</head>
+<body>
+
+
+    <nav class="navbar">
+        <span class="brand">Mobile <i class="fa-solid fa-phone-flip"></i><sup class="device">Device</sup></span>
+        <ul class="nav">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="products.html">Devices</a></li>
+            <li><a href="admin.html" id='admin'>Admin</a></li>
+            <li><a href="cart.html" id="cart"><i class="fa fa-shopping-cart"></i> <span id="count">0</span> items</a></li>
+            <li><a href="login.html" id='login'>Login</a></li>
+        </ul>
+    </nav>
+    <div style="text-align: center;margin-top: 280px;">
+        <h1 style="font-size: 80px;font-family:-webkit-body;">Welcome To Our Store</h1>
+        <h2>Discover New Release smartphones</h2>
+    </div>
+
+    
+    
+</body>
+</html>
